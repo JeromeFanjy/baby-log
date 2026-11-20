@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="宝宝记录">
+<meta name="theme-color" content="#F6F4EF">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">
+<link rel="apple-touch-icon" href="icon.png">
+<title>宝宝记录</title>
+<style>
+:root{
+  --bg:#F6F4EF; --ink:#33302B; --ink2:#8A857C;
+  --card:#FFFFFF; --line:#ECE8DF;
+  --feed:#F2994A; --feed-bg:#FFF3E6;
+  --diaper:#4E9ED4; --diaper-bg:#EAF5FC;
+  --supp:#4FAF8D; --supp-bg:#E9F6F0;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0;}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+  font-size:17px; line-height:1.45;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  -webkit-user-select:none; user-select:none;
+}
+button{font-family:inherit; border:none; background:none; color:inherit; cursor:pointer;}
+input,textarea,select{font-family:inherit; font-size:16px;}
+.hidden{display:none !important;}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky; top:0; z-index:30;
+  display:flex; align-items:center; justify-content:space-between;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 8px;
+  background:rgba(246,244,239,.92); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .title{font-size:20px; font-weight:700; letter-spacing:.5px;}
+.topbar .gear{font-size:22px; width:44px; height:44px; border-radius:50%; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.06);}
+
+/* ---------- date nav ---------- */
+.datenav{display:flex; align-items:center; justify-content:space-between; padding:10px 16px 2px;}
+.datenav .arrow{font-size:26px; width:46px; height:46px; border-radius:14px; background:var(--card); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.datenav .arrow:disabled{opacity:.25;}
+.dateinfo{text-align:center; flex:1;}
+.dateinfo .day{font-size:19px; font-weight:700;}
+.dateinfo .sub{font-size:13px; color:var(--ink2); margin-top:1px;}
+
+/* ---------- stat cards ---------- */
+.stats{display:flex; gap:10px; padding:10px 16px 4px;}
+.statcard{flex:1; background:var(--card); border-radius:18px; padding:12px 10px 10px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,.05); min-width:0;}
+.statcard .ic{font-size:22px;}
+.statcard .big{font-size:22px; font-weight:800; margin-top:2px; white-space:nowrap;}
+.statcard .big small{font-size:13px; font-weight:600; color:var(--ink2);}
+.statcard .sub{font-size:11.5px; color:var(--ink2); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.statcard.feed{border-bottom:4px solid var(--feed);}
+.statcard.diaper{border-bottom:4px solid var(--diaper);}
+.statcard.supp{border-bottom:4px solid var(--supp);}
+
+/* ---------- timeline ---------- */
+.timeline{padding:8px 16px 0;}
+.caption{font-size:12.5px; color:var(--ink2); padding:4px 2px 8px;}
+.item{
+  display:flex; align-items:flex-start; gap:12px;
+  background:var(--card); border-radius:16px; padding:12px 14px; margin-bottom:10px;
+  box-shadow:0 1px 4px rgba(0,0,0,.05); position:relative; overflow:hidden;
+}
+.item::before{content:""; position:absolute; left:0; top:0; bottom:0; width:5px;}
+.item.feed::before{background:var(--feed);}
+.item.diaper::before{background:var(--diaper);}
+.item.supp::before{background:var(--supp);}
+.item .em{font-size:26px; line-height:1.1;}
+.item .body{flex:1; min-width:0;}
+.item .head{font-size:15.5px; font-weight:700;}
+.item .detail{font-size:13.5px; color:var(--ink2); margin-top:2px; word-break:break-all;}
+.item .tm{font-size:14px; font-weight:700; color:var(--ink2); font-variant-numeric:tabular-nums; white-space:nowrap;}
+.empty{text-align:center; color:var(--ink2); padding:44px 0; font-size:15px;}
+.empty .big{font-size:40px; display:block; margin-bottom:8px;}
+
+/* ---------- bottom add bar ---------- */
+.addbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:25;
+  display:flex; gap:10px; padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  background:rgba(246,244,239,.94); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+}
+.addbtn{flex:1; border-radius:16px; padding:13px 4px; font-size:17px; font-weight:700; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.12);}
+.addbtn.feed{background:var(--feed);}
+.addbtn.diaper{background:var(--diaper);}
+.addbtn.supp{background:var(--supp);}
+.addbtn:active{transform:scale(.97);}
+
+/* ---------- sheet ---------- */
+.backdrop{position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:40; opacity:0; transition:opacity .18s;}
+.backdrop.show{opacity:1;}
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:41;
+  background:var(--bg); border-radius:22px 22px 0 0;
+  padding:14px 18px calc(18px + env(safe-area-inset-bottom));
+  max-height:88vh; overflow-y:auto; transform:translateY(102%); transition:transform .22s ease-out;
+}
+.sheet.show{transform:translateY(0);}
+.sheet .grab{width:40px; height:5px; border-radius:3px; background:#D8D2C6; margin:0 auto 12px;}
+.sheet h2{margin:2px 0 14px; font-size:19px; text-align:center;}
+.sheet h3{margin:16px 0 6px; font-size:13px; color:var(--ink2); font-weight:600;}
+.row{margin-bottom:14px;}
+.row label{display:block; font-size:13px; color:var(--ink2); margin:0 2px 6px; font-weight:600;}
+.seg{display:flex; background:#EDE9DF; border-radius:12px; padding:4px; gap:4px;}
+.seg button{flex:1; padding:10px 4px; border-radius:9px; font-size:16px; font-weight:600; color:var(--ink2);}
+.seg button.on{background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.chips{display:flex; flex-wrap:wrap; gap:8px;}
+.chip{padding:8px 14px; border-radius:999px; background:#fff; border:1.5px solid var(--line); font-size:15px;}
+.chip.on{border-color:var(--accent,#F2994A); background:var(--accent-bg,#FFF3E6); color:var(--accent,#F2994A); font-weight:700;}
+.textin, .num, .dt{
+  width:100%; background:#fff; border:1.5px solid var(--line); border-radius:12px;
+  padding:11px 12px; color:var(--ink); outline:none;
+}
+.textin:focus,.num:focus,.dt:focus{border-color:var(--accent,#F2994A);}
+.btnrow{display:flex; gap:10px; margin-top:18px;}
+.btn{padding:13px 0; border-radius:14px; font-size:16.5px; font-weight:700; text-align:center;}
+.btn.gray{flex:1; background:#EDE9DF; color:var(--ink2);}
+.btn.primary{flex:2; background:var(--accent,#F2994A); color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.1);}
+.btn.danger{width:100%; background:#FDEAEA; color:#D64545; margin-top:8px;}
+.timerrow{display:flex; align-items:center; gap:10px; margin-top:10px;}
+.timerrow .num{flex:1;}
+.timerbtn{white-space:nowrap; padding:11px 16px; border-radius:12px; background:var(--accent,#F2994A); color:#fff; font-weight:700; font-size:15px;}
+.timerlbl{font-size:15px; font-weight:700; color:var(--accent,#F2994A); margin-left:6px; font-variant-numeric:tabular-nums;}
+
+/* ---------- settings / export ---------- */
+.menubtn{display:block; width:100%; text-align:left; background:#fff; border-radius:14px; padding:14px 16px; margin-bottom:10px; font-size:16px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.menubtn small{display:block; font-size:12.5px; color:var(--ink2); font-weight:400; margin-top:2px;}
+.menubtn.warn{background:#FDEAEA; color:#D64545;}
+.about{font-size:13px; color:var(--ink2); line-height:1.6; padding:2px 4px 8px;}
+.export-area,.import-area{width:100%; min-height:120px; background:#fff; border:1.5px solid var(--line); border-radius:12px; padding:10px; font-size:12px; font-family:Menlo,monospace; color:var(--ink);}
+
+/* ---------- toast / banner ---------- */
+.toast{
+  position:fixed; left:50%; bottom:120px; transform:translateX(-50%); z-index:60;
+  background:rgba(40,38,33,.92); color:#fff; font-size:14.5px; padding:10px 18px; border-radius:999px;
+  opacity:0; transition:opacity .2s; pointer-events:none; max-width:80vw; text-align:center;
+}
+.toast.show{opacity:1;}
+.storagewarn{position:fixed; top:0; left:0; right:0; z-index:70; background:#C94F4F; color:#fff; font-size:13px; padding:8px 14px; text-align:center;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="title">👶 宝宝记录</div>
+  <button class="gear" id="btnSettings" aria-label="设置">⚙️</button>
+</header>
+
+<nav class="datenav">
+  <button class="arrow" id="btnPrev" aria-label="前一天">‹</button>
+  <div class="dateinfo">
+    <div class="day" id="dateDay"></div>
+    <div class="sub" id="dateSub"></div>
+  </div>
+  <button class="arrow" id="btnNext" aria-label="后一天">›</button>
+</nav>
+
+<section class="stats">
+  <div class="statcard feed" id="statFeed"></div>
+  <div class="statcard diaper" id="statDiaper"></div>
+  <div class="statcard supp" id="statSupp"></div>
+</section>
+
+<main class="timeline" id="timeline"></main>
+
+<footer class="addbar">
+  <button class="addbtn feed" data-kind="feed">🍼 喂养</button>
+  <button class="addbtn diaper" data-kind="diaper">🧷 尿布</button>
+  <button class="addbtn supp" data-kind="supp">💊 补剂</button>
+</footer>
+
+<div class="backdrop hidden" id="backdrop"></div>
+<div class="sheet hidden" id="sheet"></div>
+<div class="toast" id="toast"></div>
+<div class="storagewarn hidden" id="storageWarn">⚠️ 浏览器无法保存数据（可能开启了无痕模式），记录将不会被保留。</div>
+
+<script>
+/* ================= PURE HELPERS (logic, no DOM) ================= */
+/* PURE-START */
+function pad2(n){ return (n < 10 ? '0' : '') + n; }
+function dateKeyOf(ts){
+  var d = new Date(ts);
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+function todayKey(){
+  return dateKeyOf(Date.now());
+}
+function toLocalInputValue(ts){
+  var d = new Date(ts);
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
+         'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+function parseLocalInput(s){
+  var t = s.split('T');
+  var dp = t[0].split('-');
+  var tp = t[1].split(':');
+  var d = new Date(+dp[0], +dp[1] - 1, +dp[2], +tp[0], +tp[1] || 0);
+  return d.getTime();
+}
+function dayLabel(key){
+  var t = todayKey();
+  if (key === t) return '今天';
+  var d = new Date(); d.setDate(d.getDate() - 1);
+  if (key === dateKeyOf(d.getTime())) return '昨天';
+  d = new Date(); d.setDate(d.getDate() - 2);
+  if (key === dateKeyOf(d.getTime())) return '前天';
+  var p = key.split('-');
+  return (+p[1]) + '月' + (+p[2]) + '日';
+}
+function weekdayLabel(key){
+  var p = key.split('-');
+  var names = ['日','一','二','三','四','五','六'];
+  var wd = new Date(+p[0], +p[1] - 1, +p[2]).getDay();
+  return '周' + names[wd];
+}
+function shiftDayKey(key, delta){
+  var p = key.split('-');
+  var d = new Date(+p[0], +p[1] - 1, +p[2]);
+  d.setDate(d.getDate() + delta);
+  return dateKeyOf(d.getTime());
+}
+function padHM(ts){
+  var d = new Date(ts);
+  return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+function fmtMinutes(min){
+  if (min >= 60){
+    var h = Math.floor(min / 60);
+    var m = min % 60;
+    return m ? (h + '小时' + m + '分') : (h + '小时');
+  }
+  return min + '分钟';
+}
+function escapeHtml(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function computeStats(records, key){
+  var s = { feedCount:0, bfMinutes:0, storedMl:0, formulaMl:0, peeCount:0, poopCount:0, diaperCount:0, suppCount:0 };
+  for (var i = 0; i < records.length; i++){
+    var r = records[i];
+    if (dateKeyOf(r.ts) !== key) continue;
+    if (r.k === 'feed'){
+      s.feedCount++;
+      if (r.data.mode === 'bf') s.bfMinutes += (r.data.minutes || 0);
+      else if (r.data.mode === 'stored') s.storedMl += (r.data.ml || 0);
+      else s.formulaMl += (r.data.ml || 0);
+    } else if (r.k === 'diaper'){
+      s.diaperCount++;
+      if (r.data.kind === 'pee') s.peeCount++;
+      else if (r.data.kind === 'poop') s.poopCount++;
+      else { s.peeCount++; s.poopCount++; }
+    } else if (r.k === 'supp'){
+      s.suppCount++;
+    }
+  }
+  return s;
+}
+function summarize(r){
+  if (r.k === 'feed'){
+    if (r.data.mode === 'bf'){
+      var parts = ['母乳亲喂'];
+      var side = r.data.side ? {left:'左侧', right:'右侧', both:'双侧'}[r.data.side] : '';
+      if (side) parts.push(side);
+      if (r.data.minutes) parts.push(fmtMinutes(r.data.minutes));
+      return parts.join(' · ');
+    }
+    var s = r.data.mode === 'stored' ? '储存奶' : '配方奶';
+    if (r.data.ml) s += ' · ' + r.data.ml + ' ml';
+    if (r.data.mode === 'stored' && r.data.state) s += ' · ' + r.data.state;
+    return s;
+  }
+  if (r.k === 'diaper'){
+    var k = {pee:'小便', poop:'大便', both:'小便+大便'}[r.data.kind] || '尿布';
+    var bits = [k];
+    if (r.data.kind !== 'pee'){
+      if (r.data.consistency) bits.push(r.data.consistency);
+      if (r.data.color) bits.push(r.data.color);
+    }
+    if (r.data.amount) bits.push(r.data.amount);
+    return bits.join(' · ');
+  }
+  var sn = r.data.name || '补剂';
+  return r.data.dose ? (sn + ' · ' + r.data.dose) : sn;
+}
+function titleOf(r){
+  if (r.k === 'feed') return r.data.mode === 'bf' ? '母乳亲喂' : (r.data.mode === 'stored' ? '储存奶' : '配方奶');
+  if (r.k === 'diaper') return {pee:'小便', poop:'大便', both:'小便+大便'}[r.data.kind] || '尿布';
+  return r.data.name || '补剂';
+}
+function newId(){
+  return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+function normalizeRecords(arr){
+  var out = [];
+  if (!Array.isArray(arr)) return out;
+  for (var i = 0; i < arr.length; i++){
+    var r = arr[i];
+    if (!r || typeof r.ts !== 'number' || !isFinite(r.ts) || (r.k !== 'feed' && r.k !== 'diaper' && r.k !== 'supp')) continue;
+    if (!r.data || typeof r.data !== 'object') continue;
+    var nd = {};
+    if (r.k === 'feed'){
+      var m = r.data.mode;
+      nd.mode = (m === 'bf' || m === 'stored' || m === 'formula') ? m : (m === 'bottle' ? 'formula' : 'bf');
+      nd.side = r.data.side || '';
+      nd.state = String(r.data.state || '').slice(0, 10);
+      nd.minutes = Math.max(0, Math.round(Number(r.data.minutes) || 0));
+      nd.ml = Math.max(0, Math.round(Number(r.data.ml) || 0));
+    } else if (r.k === 'diaper'){
+      nd.kind = (r.data.kind === 'pee' || r.data.kind === 'poop' || r.data.kind === 'both') ? r.data.kind : 'pee';
+      nd.amount = r.data.amount || '';
+      nd.consistency = r.data.consistency || '';
+      nd.color = r.data.color || '';
+    } else {
+      nd.name = String(r.data.name || '').slice(0, 40);
+      nd.dose = String(r.data.dose || '').slice(0, 40);
+    }
+    out.push({ id: String(r.id || newId()), k: r.k, ts: r.ts, data: nd, note: String(r.note || '').slice(0, 200) });
+  }
+  out.sort(function(a, b){ return b.ts - a.ts; });
+  return out;
+}
+function mergeRecords(base, incoming){
+  var map = {};
+  for (var i = 0; i < base.length; i++) map[base[i].id] = base[i];
+  for (var j = 0; j < incoming.length; j++) map[incoming[j].id] = incoming[j];
+  var out = [];
+  for (var id in map) out.push(map[id]);
+  out.sort(function(a, b){ return b.ts - a.ts; });
+  return out;
+}
+function exportJson(records){
+  return JSON.stringify({ app:'宝宝记录', version:1, exportedAt:new Date().toISOString(), records:records }, null, 2);
+}
+function parseImport(text){
+  var obj;
+  try { obj = JSON.parse(text); } catch(e){ return null; }
+  if (Array.isArray(obj)) return normalizeRecords(obj);
+  if (obj && Array.isArray(obj.records)) return normalizeRecords(obj.records);
+  return null;
+}
+/* PURE-END */
+/* ================================================================ */
+
+var STORE_KEY = 'babyLog.records.v1';
+var records = [];
+var selectedKey = todayKey();
+var editingId = null;
+var timerStart = null;
+var timerInterval = null;
+var storageOk = true;
+
+/* ---------- storage ---------- */
+function load(){
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if (raw) records = normalizeRecords(JSON.parse(raw));
+  } catch(e){
+    storageOk = false;
+  }
+  try {
+    localStorage.setItem('babyLog.test', '1');
+    localStorage.removeItem('babyLog.test');
+  } catch(e){
+    storageOk = false;
+  }
+  if (!storageOk) document.getElementById('storageWarn').classList.remove('hidden');
+}
+function save(){
+  if (!storageOk) return;
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(records)); } catch(e){}
+}
+
+/* ---------- toast ---------- */
+var toastTimer = null;
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 1900);
+}
+
+/* ---------- render ---------- */
+function render(){
+  var key = selectedKey;
+  document.getElementById('dateDay').textContent = dayLabel(key);
+  document.getElementById('dateSub').textContent = weekdayLabel(key) + ' · ' + key;
+  document.getElementById('btnNext').disabled = (key === todayKey());
+  document.getElementById('btnPrev').disabled = false;
+
+  var s = computeStats(records, key);
+  var feedParts = [];
+  if (s.bfMinutes) feedParts.push('亲喂 ' + fmtMinutes(s.bfMinutes));
+  if (s.storedMl) feedParts.push('储奶 ' + s.storedMl + ' ml');
+  if (s.formulaMl) feedParts.push('配方 ' + s.formulaMl + ' ml');
+  document.getElementById('statFeed').innerHTML =
+    '<div class="ic">🍼</div><div class="big">' + s.feedCount + '<small> 次</small></div>' +
+    '<div class="sub">' + (feedParts.length ? feedParts.join(' · ') : (s.feedCount ? '' : '暂无记录')) + '</div>';
+  document.getElementById('statDiaper').innerHTML =
+    '<div class="ic">🧷</div><div class="big">尿 ' + s.peeCount + '<small> · </small>便 ' + s.poopCount + '</div>' +
+    '<div class="sub">' + (s.diaperCount ? ('共换 ' + s.diaperCount + ' 次') : '暂无记录') + '</div>';
+  document.getElementById('statSupp').innerHTML =
+    '<div class="ic">💊</div><div class="big">' + s.suppCount + '<small> 项</small></div>' +
+    '<div class="sub">' + (s.suppCount ? '已按时补充' : '暂无记录') + '</div>';
+
+  var dayRecs = [];
+  for (var i = 0; i < records.length; i++){
+    if (dateKeyOf(records[i].ts) === key) dayRecs.push(records[i]);
+  }
+  var tl = document.getElementById('timeline');
+  if (!dayRecs.length){
+    tl.innerHTML = '<div class="empty"><span class="big">🌙</span>这一天还没有记录<br>点下方按钮开始记录吧</div>';
+    return;
+  }
+  var html = '<div class="caption">全天 ' + dayRecs.length + ' 条记录</div>';
+  for (var j = 0; j < dayRecs.length; j++){
+    var r = dayRecs[j];
+    var em = r.k === 'feed' ? '🍼' : (r.k === 'diaper' ? '🧷' : '💊');
+    var note = r.note ? '<div class="detail">💬 ' + escapeHtml(r.note) + '</div>' : '';
+    html += '<div class="item ' + r.k + '" data-id="' + escapeHtml(r.id) + '">' +
+      '<div class="em">' + em + '</div>' +
+      '<div class="body"><div class="head">' + escapeHtml(titleOf(r)) + '</div>' +
+      '<div class="detail">' + escapeHtml(summarize(r)) + '</div>' + note + '</div>' +
+      '<div class="tm">' + padHM(r.ts) + '</div></div>';
+  }
+  tl.innerHTML = html;
+
+  var items = tl.querySelectorAll('.item');
+  for (var m = 0; m < items.length; m++){
+    items[m].addEventListener('click', function(){
+      var id = this.getAttribute('data-id');
+      for (var n = 0; n < records.length; n++){
+        if (records[n].id === id){ openSheet(records[n].k, records[n]); break; }
+      }
+    });
+  }
+}
+
+/* ---------- sheet mechanics ---------- */
+var sheetKind = null;
+function openSheet(kind, record){
+  sheetKind = kind;
+  editingId = record ? record.id : null;
+  document.getElementById('backdrop').classList.remove('hidden');
+  requestAnimationFrame(function(){ document.getElementById('backdrop').classList.add('show'); });
+  var sheet = document.getElementById('sheet');
+  sheet.innerHTML = buildForm(kind, record);
+  sheet.classList.remove('hidden');
+  requestAnimationFrame(function(){ sheet.classList.add('show'); });
+  bindForm(kind, record);
+}
+function closeSheet(){
+  stopTimer();
+  var sheet = document.getElementById('sheet');
+  var bd = document.getElementById('backdrop');
+  sheet.classList.remove('show');
+  bd.classList.remove('show');
+  setTimeout(function(){
+    sheet.classList.add('hidden');
+    bd.classList.add('hidden');
+    sheet.innerHTML = '';
+  }, 240);
+}
+
+/* ---------- forms ---------- */
+function buildForm(kind, rec){
+  var d = rec ? rec.data : {};
+  var ts = rec ? rec.ts : Date.now();
+  var head = '<div class="grab"></div><h2>' +
+    (rec ? '编辑' : '新增') + ({feed:'喂养记录', diaper:'尿布记录', supp:'补剂记录'}[kind]) + '</h2>';
+  var timeRow = '<div class="row"><label>时间</label><input class="dt" id="fTime" type="datetime-local" value="' + toLocalInputValue(ts) + '"></div>';
+
+  if (kind === 'feed'){
+    var mode = d.mode === 'stored' ? 'stored' : (d.mode === 'formula' || d.mode === 'bottle' ? 'formula' : 'bf');
+    var bfBlock = '<div id="bfBlock"' + (mode === 'bf' ? '' : ' class="hidden"') + '>' +
+      '<div class="row"><label>哺乳侧</label><div class="chips" id="fSide">' +
+        chip('左侧', 'left', d.side) + chip('右侧', 'right', d.side) + chip('双侧', 'both', d.side) +
+      '</div></div>' +
+      '<div class="row"><label>时长（分钟）</label><div class="timerrow">' +
+        '<input class="num" id="fMinutes" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="亲喂时长" value="' + (d.minutes || '') + '">' +
+        '<button class="timerbtn" id="btnTimer" type="button">开始计时</button>' +
+      '</div><div class="timerlbl" id="timerLabel" style="display:none"></div></div></div>';
+    var storedBlock = '<div id="storedBlock"' + (mode === 'stored' ? '' : ' class="hidden"') + '>' +
+      '<div class="row"><label>奶量（ml）</label><input class="num" id="fStoredMl" type="number" inputmode="numeric" min="1" max="500" step="5" placeholder="例如 90" value="' + (d.ml || '') + '"></div>' +
+      '<div class="row"><label>状态（可选）</label><div class="chips" id="fStoredState">' +
+        chip('冷冻', '冷冻', d.state) + chip('冷藏', '冷藏', d.state) + chip('常温', '常温', d.state) + chip('现挤', '现挤', d.state) +
+      '</div></div></div>';
+    var formulaBlock = '<div id="formulaBlock"' + (mode === 'formula' ? '' : ' class="hidden"') + '>' +
+      '<div class="row"><label>奶量（ml）</label><input class="num" id="fFormulaMl" type="number" inputmode="numeric" min="1" max="500" step="5" placeholder="例如 90" value="' + (d.ml || '') + '"></div></div>';
+    return head +
+      '<div class="row"><label>喂养方式</label><div class="seg" id="fMode">' +
+        segBtn('母乳亲喂', 'bf', mode) + segBtn('储存奶', 'stored', mode) + segBtn('配方奶', 'formula', mode) +
+      '</div></div>' +
+      bfBlock + storedBlock + formulaBlock + timeRow + noteRow(d, rec);
+  }
+
+  if (kind === 'diaper'){
+    var k = d.kind || 'pee';
+    var poopRows = '<div id="poopBlock"' + (k === 'pee' ? ' class="hidden"' : '') + '>' +
+      '<div class="row"><label>大便性状</label><div class="chips" id="fConsistency">' +
+        chip('正常', '正常', d.consistency) + chip('稀水', '稀水', d.consistency) + chip('干硬', '干硬', d.consistency) +
+      '</div></div>' +
+      '<div class="row"><label>大便颜色</label><div class="chips" id="fColor">' +
+        chip('黄', '黄', d.color) + chip('金黄', '金黄', d.color) + chip('绿', '绿', d.color) +
+        chip('棕', '棕', d.color) + chip('黑', '黑', d.color) + chip('其他', '其他', d.color) +
+      '</div></div></div>';
+    return head +
+      '<div class="row"><label>类型</label><div class="seg" id="fKind">' +
+        segBtn('小便', 'pee', k) + segBtn('大便', 'poop', k) + segBtn('都有', 'both', k) +
+      '</div></div>' + poopRows +
+      '<div class="row"><label>量（可选）</label><div class="chips" id="fAmount">' +
+        chip('少量', '少量', d.amount) + chip('中等', '中等', d.amount) + chip('大量', '大量', d.amount) +
+      '</div></div>' + timeRow + noteRow(d, rec);
+  }
+
+  /* supp */
+  return head +
+    '<div class="row"><label>补剂名称</label><input class="textin" id="fName" placeholder="例如：维生素D" value="' + escapeHtml(d.name || '') + '"></div>' +
+    '<div class="row"><label>剂量（可选）</label><input class="textin" id="fDose" placeholder="例如：400 IU / 1 滴" value="' + escapeHtml(d.dose || '') + '"></div>' +
+    '<div class="row"><label>常用</label><div class="chips" id="fPreset">' +
+      chip('维生素D', '维生素D', d.name) + chip('维生素AD', '维生素AD', d.name) +
+      chip('维生素K1', '维生素K1', d.name) + chip('铁剂', '铁剂', d.name) +
+      chip('益生菌', '益生菌', d.name) + chip('DHA', 'DHA', d.name) +
+    '</div></div>' + timeRow + noteRow(d, rec);
+}
+function chip(label, val, cur){
+  return '<button class="chip' + (cur === val ? ' on' : '') + '" data-val="' + escapeHtml(val) + '" type="button">' + escapeHtml(label) + '</button>';
+}
+function segBtn(label, val, cur){
+  return '<button class="' + (cur === val ? 'on' : '') + '" data-val="' + val + '" type="button">' + label + '</button>';
+}
+function noteRow(d){
+  return '<div class="row"><label>备注（可选）</label><input class="textin" id="fNote" placeholder="例如：吐奶较多 / 换了新奶粉" value="' + escapeHtml(d.note || '') + '"></div>' +
+    '<div class="btnrow"><button class="btn gray" id="btnCancel" type="button">取消</button>' +
+    '<button class="btn primary" id="btnSave" type="button">保存</button></div>' +
+    (editingId ? '<button class="btn danger" id="btnDelete" type="button">删除这条记录</button>' : '');
+}
+
+function bindForm(kind){
+  var sheet = document.getElementById('sheet');
+  var accent = {feed:'#F2994A', diaper:'#4E9ED4', supp:'#4FAF8D'}[kind];
+  var accentBg = {feed:'#FFF3E6', diaper:'#EAF5FC', supp:'#E9F6F0'}[kind];
+  sheet.style.setProperty('--accent', accent);
+  sheet.style.setProperty('--accent-bg', accentBg);
+
+  sheet.querySelectorAll('.seg button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var parent = this.parentElement;
+      parent.querySelectorAll('button').forEach(function(b){ b.classList.remove('on'); });
+      this.classList.add('on');
+      if (parent.id === 'fMode'){
+        var v = this.getAttribute('data-val');
+        document.getElementById('bfBlock').classList.toggle('hidden', v !== 'bf');
+        document.getElementById('storedBlock').classList.toggle('hidden', v !== 'stored');
+        document.getElementById('formulaBlock').classList.toggle('hidden', v !== 'formula');
+      }
+      if (parent.id === 'fKind'){
+        var poop = this.getAttribute('data-val') !== 'pee';
+        document.getElementById('poopBlock').classList.toggle('hidden', !poop);
+      }
+    });
+  });
+  sheet.querySelectorAll('.chips').forEach(function(group){
+    group.addEventListener('click', function(ev){
+      var t = ev.target;
+      if (!t.classList || !t.classList.contains('chip')) return;
+      var groupId = group.id;
+      if (groupId === 'fPreset'){
+        document.getElementById('fName').value = t.getAttribute('data-val');
+        return;
+      }
+      group.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('on'); });
+      t.classList.add('on');
+    });
+  });
+
+  var timerBtn = document.getElementById('btnTimer');
+  if (timerBtn) timerBtn.addEventListener('click', toggleTimer);
+  document.getElementById('btnCancel').addEventListener('click', closeSheet);
+  document.getElementById('btnSave').addEventListener('click', function(){ saveForm(kind); });
+  var del = document.getElementById('btnDelete');
+  if (del) del.addEventListener('click', function(){
+    if (confirm('确定删除这条记录吗？删除后无法恢复。')){
+      records = records.filter(function(r){ return r.id !== editingId; });
+      save(); render(); closeSheet(); toast('已删除');
+    }
+  });
+}
+
+function segValue(id){
+  var el = document.querySelector('#' + id + ' button.on');
+  return el ? el.getAttribute('data-val') : '';
+}
+function chipValue(id){
+  var el = document.querySelector('#' + id + ' .chip.on');
+  return el ? el.getAttribute('data-val') : '';
+}
+function numOf(id){
+  var v = Number(document.getElementById(id).value);
+  return isFinite(v) && v > 0 ? Math.round(v) : 0;
+}
+
+function saveForm(kind){
+  var timeEl = document.getElementById('fTime');
+  if (!timeEl.value){ toast('请填写时间'); return; }
+  var ts = parseLocalInput(timeEl.value);
+  if (isNaN(ts)){ toast('时间格式不正确'); return; }
+  var note = document.getElementById('fNote').value.trim();
+
+  var data;
+  if (kind === 'feed'){
+    var mode = segValue('fMode') || 'bf';
+    data = { mode: mode };
+    if (mode === 'bf'){
+      data.side = chipValue('fSide') || '';
+      data.minutes = numOf('fMinutes');
+      if (!data.minutes){ toast('请填写亲喂时长'); return; }
+    } else if (mode === 'stored'){
+      data.state = chipValue('fStoredState') || '';
+      data.ml = numOf('fStoredMl');
+      if (!data.ml){ toast('请填写奶量'); return; }
+    } else {
+      data.ml = numOf('fFormulaMl');
+      if (!data.ml){ toast('请填写奶量'); return; }
+    }
+  } else if (kind === 'diaper'){
+    data = { kind: segValue('fKind') || 'pee', amount: chipValue('fAmount') || '', consistency: '', color: '' };
+    if (data.kind !== 'pee'){
+      data.consistency = chipValue('fConsistency') || '';
+      data.color = chipValue('fColor') || '';
+    }
+  } else {
+    var name = document.getElementById('fName').value.trim();
+    if (!name){ toast('请填写补剂名称'); return; }
+    data = { name: name, dose: document.getElementById('fDose').value.trim() };
+  }
+
+  var rec = { id: editingId || newId(), k: kind, ts: ts, data: data, note: note };
+  if (editingId){
+    for (var i = 0; i < records.length; i++){
+      if (records[i].id === editingId){ records[i] = rec; break; }
+    }
+  } else {
+    records.push(rec);
+  }
+  records.sort(function(a, b){ return b.ts - a.ts; });
+  selectedKey = dateKeyOf(ts);
+  save(); render(); closeSheet(); toast(editingId ? '已更新' : '已记录 ✓');
+}
+
+/* ---------- breast-feeding timer ---------- */
+function toggleTimer(){
+  var btn = document.getElementById('btnTimer');
+  if (timerInterval){
+    stopTimer(); btn.textContent = '开始计时';
+    return;
+  }
+  timerStart = Date.now();
+  btn.textContent = '停止计时';
+  var lbl = document.getElementById('timerLabel');
+  lbl.style.display = 'inline';
+  var input = document.getElementById('fMinutes');
+  function tick(){
+    var sec = Math.floor((Date.now() - timerStart) / 1000);
+    var mm = pad2(Math.floor(sec / 60));
+    var ss = pad2(sec % 60);
+    lbl.textContent = '⏱ ' + mm + ':' + ss;
+    input.value = Math.max(1, Math.round(sec / 60));
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+function stopTimer(){
+  if (timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+}
+
+/* ---------- settings ---------- */
+function openSettings(){
+  var sheet = document.getElementById('sheet');
+  sheet.innerHTML =
+    '<div class="grab"></div><h2>设置与数据</h2>' +
+    '<button class="menubtn" id="mExport">📤 导出备份<small>复制全部记录为文本，存到备忘录或发给自己</small></button>' +
+    '<button class="menubtn" id="mImport">📥 导入恢复<small>从备份文本恢复（与现有记录合并）</small></button>' +
+    '<button class="menubtn warn" id="mClear">🗑 清空全部数据<small>删除本 App 的所有记录，不可恢复</small></button>' +
+    '<div class="about">数据只保存在<b>这台设备的浏览器</b>里，删除网页或清理 Safari 数据会丢失记录。<br>建议：每周点一次「导出备份」，把文本存进备忘录。<br>· 每天 0 点后数据自动归入当天<br>· 点击任意记录可修改或删除<br>· 顶部 ‹ › 可翻看历史日期<br>版本 1.0</div>' +
+    '<div class="btnrow"><button class="btn gray" id="btnSettingsClose" style="flex:1">关闭</button></div>';
+
+  document.getElementById('backdrop').classList.remove('hidden');
+  requestAnimationFrame(function(){ document.getElementById('backdrop').classList.add('show'); });
+  sheet.classList.remove('hidden');
+  requestAnimationFrame(function(){ sheet.classList.add('show'); });
+
+  document.getElementById('btnSettingsClose').addEventListener('click', closeSheet);
+  document.getElementById('mExport').addEventListener('click', openExport);
+  document.getElementById('mImport').addEventListener('click', openImport);
+  document.getElementById('mClear').addEventListener('click', function(){
+    if (confirm('确定清空全部记录吗？此操作不可恢复，建议先导出备份。') &&
+        confirm('再次确认：真的要删除所有记录吗？')){
+      records = [];
+      save(); render(); closeSheet(); toast('已清空');
+    }
+  });
+}
+
+function openExport(){
+  var sheet = document.getElementById('sheet');
+  var json = exportJson(records);
+  sheet.innerHTML =
+    '<div class="grab"></div><h2>导出备份</h2>' +
+    '<div class="about">下面就是全部数据。点「复制」，然后粘贴到备忘录保存即可。</div>' +
+    '<textarea class="export-area" id="exportText" readonly>' + escapeHtml(json) + '</textarea>' +
+    '<div class="btnrow"><button class="btn gray" id="eBack">返回</button>' +
+    '<button class="btn primary" id="eCopy">复制</button></div>';
+  document.getElementById('eBack').addEventListener('click', openSettings);
+  document.getElementById('eCopy').addEventListener('click', function(){
+    var ta = document.getElementById('exportText');
+    ta.removeAttribute('readonly');
+    ta.select(); ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e){}
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value).catch(function(){});
+      ok = true;
+    }
+    ta.setAttribute('readonly','readonly');
+    toast(ok ? '已复制，去备忘录粘贴保存吧' : '复制失败，请长按文字全选复制');
+  });
+}
+
+function openImport(){
+  var sheet = document.getElementById('sheet');
+  sheet.innerHTML =
+    '<div class="grab"></div><h2>导入恢复</h2>' +
+    '<div class="about">把之前导出的备份文本完整粘贴到下面，点「导入」。相同记录不会重复。</div>' +
+    '<textarea class="import-area" id="importText" placeholder="粘贴备份文本…"></textarea>' +
+    '<div class="btnrow"><button class="btn gray" id="iBack">返回</button>' +
+    '<button class="btn primary" id="iDo">导入</button></div>';
+  document.getElementById('iBack').addEventListener('click', openSettings);
+  document.getElementById('iDo').addEventListener('click', function(){
+    var parsed = parseImport(document.getElementById('importText').value);
+    if (!parsed || !parsed.length){ toast('内容无效：没有找到记录'); return; }
+    records = mergeRecords(records, parsed);
+    save(); render(); closeSheet(); toast('已导入 ' + parsed.length + ' 条记录');
+  });
+}
+
+/* ---------- boot ---------- */
+document.addEventListener('DOMContentLoaded', function(){
+  load();
+  document.getElementById('btnSettings').addEventListener('click', openSettings);
+  document.getElementById('btnPrev').addEventListener('click', function(){
+    selectedKey = shiftDayKey(selectedKey, -1); render();
+  });
+  document.getElementById('btnNext').addEventListener('click', function(){
+    selectedKey = shiftDayKey(selectedKey, 1); render();
+  });
+  document.querySelectorAll('.addbtn').forEach(function(btn){
+    btn.addEventListener('click', function(){ openSheet(this.getAttribute('data-kind'), null); });
+  });
+  document.getElementById('backdrop').addEventListener('click', closeSheet);
+  document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') closeSheet(); });
+  render();
+});
+</script>
+</body>
+</html>
